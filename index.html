@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" ng-app="sendhub">
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -9,12 +9,154 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap-theme.min.css">
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css">
-    
+    <link rel="stylesheet" href="assets/css/app.css">
   </head>
   <body>
-    <h1>Hello, world!</h1>
+    
+    <div class="container">
+      <div class="row">
+        
+        <div class="col-sm-12">
+          <h1 class="page-header">SendHub Coding Challenge <small>Bobby Earl - January 22, 2015</small></h1>
+        </div>
+        
+      </div>
+      <div class="row">
+        <div class="col-sm-8">
+          
+          <div class="panel panel-default">
+            <div class="panel-heading">
+              <h3 class="panel-title">Status</h3>
+            </div>
+            <div class="panel-body">
+              
+              <div ng-controller="MainController" ng-init="init()">
+                <p class="text-info" ng-show="status.get().loading"><i class="fa fa-spin fa-spinner"></i> Loading...</p>
+                <p class="text-danger" ng-show="status.get().unsupported">Not running.  This application requires a browser with Web Audio support (and a microphone).</p>
+                <p class="text-danger" ng-show="status.get().microphone">Not running.  This application requires access to your microphone.</p>
+                <p class="text-warning" ng-show="status.get().settings">Not running.  Please complete setup by updating your settings.</p>
+                <p class="text-info" ng-show="status.get().ready">Application is ready.  Click the Start button.</p>
+                <p class="text-success" ng-show="status.get().running">Successfully running.</p>
+              </div>  <!-- MainController -->
+              
+              <div ng-controller="AudioController">
+                <div class="progress-wrapper" ng-show="status.get().running">
+                  <div class="progress">
+                    <div class="progress-bar" style="min-width: 2em" ng-style="{ width: settings.percent }" >
+                      <span ng-bind="settings.percent"></span>
+                    </div>
+                  </div>
+                  <a href="#" class="progress-bar-threshold" ng-style="{ left: settings.threshold + '%' }" data-toggle="tooltip" ng-attr-title="{{settings.threshold}}"></a>
+                </div>
 
+                <table class="table table-hover table-striped table-condensed table-bordered" ng-show="settings.overages.length > 0">
+                  <thead>
+                    <tr>
+                      <th>Status</th>
+                      <th>Start</th>
+                      <th>Stop</th>
+                      <th>Maximum Volume</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr ng-repeat="overage in settings.overages">
+                      <td>
+                        <i class="fa fa-spin fa-spinner" ng-show="overage.status == ''"></i>
+                        <i class="fa fa-check-circle text-success" ng-show="overage.status == 'success'"></i>
+                        <a href="#" data-toggle="tooltip" ng-attr-title="{{overage.message}}" ng-show="overage.status == 'danger'">
+                          <i class="fa fa-times-circle text-danger"></i>
+                        </a>
+                      </td>
+                      <td>{{ overage.start | date:'yyyy-MM-dd HH:mm:ss' }}</td>
+                      <td>{{ overage.stop | date:'yyyy-MM-dd HH:mm:ss' }}</td>
+                      <td>{{ overage.volume }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>  <!-- AudioController -->
+              
+            </div>  <!-- .panel-body -->
+          </div>  <!-- .panel -->
+          
+        </div>
+        <div class="col-sm-4">
+          
+          <form ng-controller="SettingsController" name="form" ng-hide="status.get().loading">
+            <div class="panel panel-default">
+              <div class="panel-heading">
+                <h3 class="panel-title">Settings</h3>
+              </div>
+              <div class="panel-body">
+                <p class="text-center text-muted">Select contact or enter phone</p>
+                <div class="form-group">
+                  <div class="input-group">
+                    <select class="form-control" ng-change="onContactChange()" ng-model="settings.id" ng-init="getContacts()" ng-options="c.id_str as (c.number + ' (' + c.name + ')') for c in settings.contacts" ng-disabled="settings.number || status.get().running" ng-required="!settings.phone">
+                      <option value="">Select Contact</option>
+                    </select>
+                    <span class="input-group-btn">
+                      <button type="button" class="btn btn-default" ng-click="open()" ng-disabled="status.get().running">
+                        <i class="fa fa-plus"></i>
+                      </button>
+                    </span>  <!-- .input-group-btn -->
+                  </div>  <!-- .input-group -->
+                  <p class="text-warning" ng-show="errors['ajax']">
+                    Unknown error loading contacts.
+                  </p>             
+                </div>  <!-- .form-group -->
+                <div class="form-group">
+                  <input type="tel" class="form-control" placeholder="Phone" ng-model="settings.phone" ng-disabled="settings.id || status.get().running" ng-required="!settings.id">
+                </div>  <!-- .form-group -->
+                <div class="form-group">
+                  <input type="number" min="1" max="99" class="form-control" placeholder="Threshold" ng-model="settings.threshold" ng-disabled="status.get().running" required>
+                </div>  <!-- .form-group -->
+                <div class="form-group text-center">
+                  <button type="submit" class="btn btn-primary" ng-click="start()" ng-disabled="!form.$valid" ng-hide="status.get().running">Start Application</button>
+                  <button type="button" class="btn btn-primary" ng-click="stop()" ng-show="status.get().running">Stop Application</button>
+                </div>  <!-- .form-group -->
+              </div>  <!-- .panel-body -->
+            </div>  <!-- .panel -->
+          </form>
+        </div>  <!-- .col-sm-4 -->        
+      </div>  <!-- .row -->
+    </div>  <!-- .container -->
+    
+    <form ng-controller="ContactAddController" name="form">
+      <div class="modal fade" id="modal-contact-add">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+              <h4 class="modal-title">Add New Contact</h4>
+            </div>
+            <div class="modal-body">
+              <p class=" alert alert-danger" ng-show="errors['ajax']">
+                Unknown error adding contact.
+              </p>  
+              <div class="form-group">
+                <input type="text" class="form-control"placeholder="Name" ng-model="name" required>
+              </div>
+              <div class="form-group">
+                <input type="tel" class="form-control" id="phone" placeholder="Phone" ng-model="number" required>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-success" ng-click="add()">Add Contact</button>
+            </div>
+          </div><!-- .modal-content -->
+        </div><!-- .modal-dialog -->
+      </div><!-- .modal -->
+    </form>
+
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.10/angular.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/0.11.2/ui-bootstrap-tpls.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
+    <script src="assets/js/soundmeter.js"></script>
+    <script src="assets/js/app.js"></script>
+    <script src="assets/js/app.controllers.js"></script>
+    <script src="assets/js/app.services.js"></script>
+    <script src="assets/js/Scope.SafeApply.min.js"></script>
+    
   </body>
 </html>

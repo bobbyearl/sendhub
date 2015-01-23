@@ -1,0 +1,25 @@
+.container {
+  opacity: 0;
+  visibility: hidden;
+  transform: opacity 1s;
+}
+
+.angular-ready .container {
+  opacity: 1;
+  visibility: visible;
+}
+
+.progress-wrapper {
+  position: relative;
+}
+
+.progress-bar-threshold {
+  background: rgba(255, 0, 0, .8);
+  cursor: default;
+  display: block;
+  left: 0;
+  height: 20px;
+  position: absolute;
+  width: 5px;
+  top: 0;
+}
